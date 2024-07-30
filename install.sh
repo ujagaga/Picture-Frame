@@ -4,7 +4,7 @@
 sudo apt update
 sudo apt -y install feh
 
-# Create new startup shortcut
+chmod +x $PWD/pictureframe.py
 mkdir -p "$HOME/.config/autostart"
 SHORTCUT="$HOME/.config/autostart/pictureframe.desktop"
 echo "Creating shortcut file: $SHORTCUT"

@@ -8,7 +8,7 @@ import signal
 
 
 CFG_FILE = os.path.join(os.path.expanduser("~"), 'pictureframe.cfg')
-IMAGE_DIR = os.path.join("media", os.getlogin())
+IMAGE_DIR = os.path.join("media", os.environ.get("USER"))
 DELAY = 2
 WALLPAPER = os.path.join(os.path.expanduser("~"), 'wallpaper.jpg')
 current_path = os.path.dirname(os.path.realpath(__file__))
