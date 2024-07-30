@@ -8,7 +8,7 @@ import signal
 
 
 CFG_FILE = os.path.join(os.path.expanduser("~"), 'pictureframe.cfg')
-IMAGE_DIR = os.path.join(os.path.expanduser("~"), 'Pictures')
+IMAGE_DIR = os.path.join("media", os.getlogin())
 DELAY = 2
 WALLPAPER = os.path.join(os.path.expanduser("~"), 'wallpaper.jpg')
 current_path = os.path.dirname(os.path.realpath(__file__))
@@ -24,14 +24,22 @@ SLIDESHOW_CMD = [
     '--reverse',
     '--slideshow-delay', '2',
     '--sort', 'mtime',
-    '--auto-zoom'
+    '--auto-zoom',
+    IMAGE_DIR
 ]
 
 WALLPAPER_CMD = [
     'feh',
     '--fullscreen',
-    '--zoom', 'fill'
+    '--zoom', 'fill',
+    WALLPAPER
 ]
+
+
+def move_wallpaper(wall_location):
+    user_wallpaper = os.path.join(wall_location, "wallpaper.jpg")
+    if os.path.isfile(user_wallpaper):
+        shutil.move(user_wallpaper, WALLPAPER)
 
 
 def read_cfg():
@@ -52,9 +60,7 @@ def read_cfg():
                         var_name = cfg_line[0].strip()
                         var_val = cfg_line[1].strip()
 
-                        if var_name == "image_dir":
-                            IMAGE_DIR = var_val
-                        elif var_name == "delay":
+                        if var_name == "delay":
                             try:
                                 DELAY = int(var_val)
                             except Exception as ve:
@@ -67,36 +73,31 @@ def read_cfg():
     else:
         print(f"The config file '{CFG_FILE}' does not exist. Creating one.")
         with open(CFG_FILE, "w") as cfg_file:
-            cfg_file.write(f"image_dir={IMAGE_DIR}\n")
             cfg_file.write(f"delay={DELAY}\n")
 
-    SLIDESHOW_CMD.append(IMAGE_DIR)
-
-    user_wallpaper = os.path.join(IMAGE_DIR, "wallpaper.jpg")
-    if os.path.isfile(user_wallpaper):
-        source = user_wallpaper
-        shutil.move(source, WALLPAPER)
-    else:
-        source = os.path.join(current_path, 'wallpaper.jpg')
-        if not os.path.isfile(WALLPAPER):
-            shutil.copyfile(source, WALLPAPER)
-
-    WALLPAPER_CMD.append(WALLPAPER)
+    source = os.path.join(current_path, 'wallpaper.jpg')
+    if not os.path.isfile(WALLPAPER):
+        shutil.copyfile(source, WALLPAPER)
 
 
 def check_img_available():
     if os.path.isdir(IMAGE_DIR):
-        for filename in os.listdir(IMAGE_DIR):
-            if os.path.isfile(os.path.join(IMAGE_DIR, filename)):
-                ext = os.path.splitext(filename)[1].lower()
-                if ext in IMAGE_EXTENSIONS:
-                    return True
-    return False
+        for item in os.listdir(IMAGE_DIR):
+            item_path = os.path.join(IMAGE_DIR, item)
+            if os.path.isdir(item_path):
+                for filename in os.listdir(item_path):
+                    if os.path.isfile(os.path.join(item_path, filename)):
+                        ext = os.path.splitext(filename)[1].lower()
+                        if ext in IMAGE_EXTENSIONS:
+                            return item_path
+    return None
 
 
-def run_slideshow():
+def run_slideshow(img_path):
     try:
-        subprocess.run(SLIDESHOW_CMD, check=True)
+        command = SLIDESHOW_CMD.copy()
+        command.append(img_path)
+        subprocess.run(command, check=True)
     except subprocess.CalledProcessError as e:
         pass
 
@@ -110,11 +111,16 @@ def show_wallpaper():
 read_cfg()
 
 while True:
-    if check_img_available():
+    images_path = check_img_available()
+    if images_path is not None:
         if wall_process:
             os.kill(wall_process.pid, signal.SIGTERM)
             wall_process = None
-        run_slideshow()
+
+        # Check if a wallpaper image is inserted
+        move_wallpaper(images_path)
+
+        run_slideshow(images_path)
     else:
         if wall_process is None:
             show_wallpaper()
