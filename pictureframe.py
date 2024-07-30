@@ -8,7 +8,7 @@ import signal
 
 
 CFG_FILE = os.path.join(os.path.expanduser("~"), 'pictureframe.cfg')
-IMAGE_DIR = os.path.join("media", os.environ.get("USER"))
+IMAGE_DIR = os.path.join("/media", os.environ.get("USER"))
 DELAY = 2
 WALLPAPER = os.path.join(os.path.expanduser("~"), 'wallpaper.jpg')
 current_path = os.path.dirname(os.path.realpath(__file__))
@@ -25,6 +25,7 @@ SLIDESHOW_CMD = [
     '--slideshow-delay', '2',
     '--sort', 'mtime',
     '--auto-zoom',
+    '--hide-pointer',
     IMAGE_DIR
 ]
 
@@ -32,6 +33,7 @@ WALLPAPER_CMD = [
     'feh',
     '--fullscreen',
     '--zoom', 'fill',
+    '--hide-pointer',
     WALLPAPER
 ]
 
