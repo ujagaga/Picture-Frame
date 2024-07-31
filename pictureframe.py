@@ -5,9 +5,9 @@ import subprocess
 import shutil
 import time
 import signal
+import filecmp
 
 
-CFG_FILE = os.path.join(os.path.expanduser("~"), 'pictureframe.cfg')
 IMAGE_DIR = os.path.join("/media", os.environ.get("USER"))
 DELAY = 2
 WALLPAPER = os.path.join(os.path.expanduser("~"), 'wallpaper.jpg')
@@ -38,21 +38,21 @@ WALLPAPER_CMD = [
 ]
 
 
-def move_wallpaper(wall_location):
+def copy_wallpaper(wall_location):
     user_wallpaper = os.path.join(wall_location, "wallpaper.jpg")
     if os.path.isfile(user_wallpaper):
-        shutil.move(user_wallpaper, WALLPAPER)
+        if not filecmp.cmp(user_wallpaper, WALLPAPER):
+            shutil.copyfile(user_wallpaper, WALLPAPER)
 
 
-def read_cfg():
-    global IMAGE_DIR
+def read_cfg(cfg_location):
     global DELAY
-    global SLIDESHOW_CMD
-    global WALLPAPER_CMD
 
-    if os.path.isfile(CFG_FILE):
+    config_file_path = os.path.join(cfg_location, 'config.txt')
+
+    if os.path.isfile(config_file_path):
         try:
-            config_file = open(CFG_FILE, "r")
+            config_file = open(config_file_path, "r")
             lines = config_file.readlines()
             for line in lines:
                 data = line.strip()
@@ -68,18 +68,11 @@ def read_cfg():
                             except Exception as ve:
                                 print(f"ERROR: {ve}")
                                 DELAY = 2
+                            break
 
             config_file.close()
         except Exception as e:
-            print(f"{CFG_FILE} not accessible")
-    else:
-        print(f"The config file '{CFG_FILE}' does not exist. Creating one.")
-        with open(CFG_FILE, "w") as cfg_file:
-            cfg_file.write(f"delay={DELAY}\n")
-
-    source = os.path.join(current_path, 'wallpaper.jpg')
-    if not os.path.isfile(WALLPAPER):
-        shutil.copyfile(source, WALLPAPER)
+            print(f"{config_file_path} not accessible")
 
 
 def check_img_available():
@@ -110,7 +103,9 @@ def show_wallpaper():
     wall_process = subprocess.Popen(WALLPAPER_CMD)
 
 
-read_cfg()
+source = os.path.join(current_path, 'wallpaper.jpg')
+if not os.path.isfile(WALLPAPER):
+    shutil.copyfile(source, WALLPAPER)
 
 while True:
     images_path = check_img_available()
@@ -120,7 +115,7 @@ while True:
             wall_process = None
 
         # Check if a wallpaper image is inserted
-        move_wallpaper(images_path)
+        copy_wallpaper(images_path)
 
         run_slideshow(images_path)
     else:
