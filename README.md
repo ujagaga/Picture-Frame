@@ -7,11 +7,20 @@ My requirements:
 - slideshow delay up to few days
 
 ## How it works
-A python script checks availability of the configured folder. When not available, show "wallpaper.jpg". 
-As soon as USB flash is available, start the slideshow. Sorting is based on modify date, 
+A python script checks contents of /media/$USER/. If empty (no external media connected) show "wallpaper.jpg". 
+As soon as USB flash is mounted, start the slideshow. Sorting is based on modify date, 
 so the latest images are displayed first. 
+
 To change the wallpaper, just copy an image on the flash drive and name it "wallpaper.jpg". 
-It will be moved to HOME and used as wallpaper.
+It will be used as wallpaper when no external media is present.
+
+Default slideshow delay is 2 seconds. To change it, just create a "config.txt" on your external media
+and write new delay like:
+
+        delay=1234
+
+Any other content will be ignored
+
 The script uses "Feh" image viewer in the background.
 
 ## How to start
