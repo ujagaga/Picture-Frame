@@ -12,7 +12,7 @@ IMAGE_DIR = os.path.join("/media", os.environ.get("USER"))
 DELAY = 2
 WALLPAPER = os.path.join(os.path.expanduser("~"), 'wallpaper.jpg')
 current_path = os.path.dirname(os.path.realpath(__file__))
-IMAGE_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tiff'}
+IMAGE_EXTENSIONS = {'jpg', 'jpeg', 'png', 'gif', 'bmp', 'tiff'}
 wall_process = None
 
 
@@ -20,13 +20,11 @@ SLIDESHOW_CMD = [
     'feh',
     '--recursive',
     '--fullscreen',
-    '--preload',
     '--reverse',
-    '--slideshow-delay', '2',
     '--sort', 'mtime',
     '--auto-zoom',
     '--hide-pointer',
-    IMAGE_DIR
+    '--slideshow-delay'
 ]
 
 WALLPAPER_CMD = [
@@ -36,6 +34,8 @@ WALLPAPER_CMD = [
     '--hide-pointer',
     WALLPAPER
 ]
+
+images_path = None
 
 
 def copy_wallpaper(wall_location):
@@ -75,22 +75,24 @@ def read_cfg(cfg_location):
             print(f"{config_file_path} not accessible")
 
 
-def check_img_available():
-    if os.path.isdir(IMAGE_DIR):
-        for item in os.listdir(IMAGE_DIR):
-            item_path = os.path.join(IMAGE_DIR, item)
-            if os.path.isdir(item_path):
-                for filename in os.listdir(item_path):
-                    if os.path.isfile(os.path.join(item_path, filename)):
-                        ext = os.path.splitext(filename)[1].lower()
-                        if ext in IMAGE_EXTENSIONS:
-                            return item_path
-    return None
+def check_img_available(path=IMAGE_DIR):
+    global images_path
+
+    if images_path is None:
+        for entry in os.listdir(path):
+            full_path = os.path.join(path, entry)
+            if os.path.isdir(full_path):
+                check_img_available(full_path)
+            else:
+                ext = entry.split(".")[1].lower().strip()
+                if ext in IMAGE_EXTENSIONS:
+                    images_path = path
 
 
 def run_slideshow(img_path):
     try:
         command = SLIDESHOW_CMD.copy()
+        command.append(f"{DELAY}")
         command.append(img_path)
         subprocess.run(command, check=True)
     except subprocess.CalledProcessError as e:
@@ -108,7 +110,9 @@ if not os.path.isfile(WALLPAPER):
     shutil.copyfile(source, WALLPAPER)
 
 while True:
-    images_path = check_img_available()
+    images_path = None
+    check_img_available()
+
     if images_path is not None:
         if wall_process:
             os.kill(wall_process.pid, signal.SIGTERM)
@@ -116,7 +120,7 @@ while True:
 
         # Check if a wallpaper image is inserted
         copy_wallpaper(images_path)
-
+        read_cfg(images_path)
         run_slideshow(images_path)
     else:
         if wall_process is None:
